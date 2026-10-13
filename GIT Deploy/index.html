@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tasks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #e8eef3;
+      --surface: #ffffff;
+      --ink: #14213d;
+      --muted: #6b7a90;
+      --line: #d5dde6;
+      --accent: #2a5bd7;
+      --accent-ink: #ffffff;
+      --danger: #c0392b;
+      --font: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1623;
+        --surface: #182235;
+        --ink: #e8eef7;
+        --muted: #8a99b0;
+        --line: #2a374d;
+        --accent: #6f95ff;
+        --accent-ink: #0f1623;
+        --danger: #ff7b6b;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font);
+      min-height: 100vh;
+      padding: 48px 16px;
+    }
+    main { max-width: 620px; margin: 0 auto; }
+
+    header h1 {
+      font-size: clamp(3rem, 12vw, 5.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 0.9;
+      margin: 0 0 8px;
+    }
+    #summary { color: var(--muted); margin: 0 0 28px; font-size: 1.05rem; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    #task-form { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); }
+    #task-input {
+      flex: 1; min-width: 0;
+      font: inherit; font-size: 1.05rem;
+      color: var(--ink); background: transparent;
+      border: 0; padding: 10px 8px;
+    }
+    #task-input::placeholder { color: var(--muted); }
+    #task-input:focus { outline: none; }
+    .btn {
+      font: inherit; font-weight: 600;
+      border: 0; border-radius: 8px; cursor: pointer;
+      padding: 10px 18px;
+      background: var(--accent); color: var(--accent-ink);
+    }
+    .btn:hover { filter: brightness(1.08); }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+    #filters { display: flex; gap: 4px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .filter {
+      font: inherit; font-size: 0.95rem;
+      background: transparent; color: var(--muted);
+      border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer;
+    }
+    .filter:hover { color: var(--ink); }
+    .filter[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+
+    #task-list { list-style: none; margin: 0; padding: 0; }
+    .task {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .task:last-child { border-bottom: 0; }
+    .task input[type="checkbox"] {
+      width: 22px; height: 22px; flex: none;
+      accent-color: var(--accent); cursor: pointer;
+    }
+    .task .text {
+      flex: 1; min-width: 0; font-size: 1.05rem;
+      overflow-wrap: anywhere; cursor: text;
+    }
+    .task.done .text { color: var(--muted); text-decoration: line-through; }
+    .task .edit {
+      flex: 1; min-width: 0; font: inherit; font-size: 1.05rem;
+      color: var(--ink); background: var(--bg);
+      border: 1px solid var(--accent); border-radius: 6px; padding: 6px 8px;
+    }
+    .icon-btn {
+      font: inherit; background: transparent; color: var(--muted);
+      border: 0; border-radius: 6px; padding: 6px 10px; cursor: pointer;
+    }
+    .icon-btn:hover { color: var(--danger); background: var(--bg); }
+
+    #empty { padding: 36px 16px; text-align: center; color: var(--muted); }
+
+    footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; color: var(--muted); font-size: 0.95rem; }
+    #clear-done { font: inherit; background: transparent; color: var(--muted); border: 0; cursor: pointer; text-decoration: underline; }
+    #clear-done:hover { color: var(--danger); }
+    #clear-done[hidden] { display: none; }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .task { animation: drop 0.18s ease-out; }
+      @keyframes drop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Tasks</h1>
+      <p id="summary" aria-live="polite"></p>
+    </header>
+
+    <section class="card">
+      <form id="task-form">
+        <input id="task-input" type="text" placeholder="What needs doing?" autocomplete="off" aria-label="New task" maxlength="200">
+        <button class="btn" type="submit">Add task</button>
+      </form>
+
+      <div id="filters" role="group" aria-label="Filter tasks">
+        <button class="filter" data-filter="all" aria-pressed="true">All</button>
+        <button class="filter" data-filter="active" aria-pressed="false">To do</button>
+        <button class="filter" data-filter="done" aria-pressed="false">Done</button>
+      </div>
+
+      <ul id="task-list"></ul>
+      <div id="empty" hidden></div>
+    </section>
+
+    <footer>
+      <span>Double-click a task to edit it.</span>
+      <button id="clear-done" hidden>Clear completed</button>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
